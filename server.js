@@ -4,6 +4,8 @@ const helmet = require('helmet');
 const morgan = require('morgan');
 const config = require('./config');
 const pool = require('./db');
+const authRoutes = require('./routes/auth');
+const errorHandler = require('./middleware/errorHandler');
 
 const app = express();
 
@@ -20,6 +22,10 @@ app.get('/api/health', async (req, res) => {
     res.status(500).json({ status: 'error', db: 'disconnected' });
   }
 });
+
+app.use('/api/auth', authRoutes);
+
+app.use(errorHandler);
 
 app.listen(config.port, () => {
   console.log(`Server running on port ${config.port}`);
