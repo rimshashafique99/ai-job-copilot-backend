@@ -25,5 +25,27 @@ async function createUser({ email, passwordHash, fullName, targetRole }) {
   );
   return result.rows[0];
 }
+async function findByGoogleId(googleId) {
+  const result = await pool.query('SELECT * FROM users WHERE google_id = $1', [googleId]);
+  return result.rows[0] || null;
+}
 
-module.exports = { findByEmail, findById, createUser };
+async function createGoogleUser({ email, fullName, googleId }) {
+  const result = await pool.query(
+    `INSERT INTO users (email, full_name, google_id, auth_provider)
+     VALUES ($1, $2, $3, 'google')
+     RETURNING id, email, full_name, target_role, created_at`,
+    [email, fullName, googleId]
+  );
+  return result.rows[0];
+}
+async function updateUser(userId, { fullName, targetRole }) {
+  const result = await pool.query(
+    `UPDATE users SET full_name = $1, target_role = $2 WHERE id = $3
+     RETURNING id, email, full_name, target_role, created_at`,
+    [fullName, targetRole, userId]
+  );
+  return result.rows[0];
+}
+
+module.exports = { findByEmail, findById, createUser, findByGoogleId, createGoogleUser, updateUser };

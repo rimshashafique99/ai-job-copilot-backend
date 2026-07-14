@@ -51,5 +51,33 @@ function refreshAccessToken(refreshToken) {
     throw new AppError('Invalid or expired refresh token', 401);
   }
 }
+const { OAuth2Client } = require('google-auth-library');
+const client = new OAuth2Client(config.googleClientId);
 
-module.exports = { signup, login, refreshAccessToken };
+async function loginWithGoogle(idToken) {
+  const ticket = await client.verifyIdToken({
+    idToken,
+    audience: config.googleClientId,
+  });
+  const payload = ticket.getPayload(); // { email, name, sub, ... }
+
+  let user = await userRepository.findByGoogleId(payload.sub);
+
+  if (!user) {
+    // check if an email/password account already exists with this email
+    const existingLocalUser = await userRepository.findByEmail(payload.email);
+    if (existingLocalUser) {
+      throw new AppError('An account with this email already exists. Please log in with password.', 409);
+    }
+    user = await userRepository.createGoogleUser({
+      email: payload.email,
+      fullName: payload.name,
+      googleId: payload.sub,
+    });
+  }
+
+  const tokens = generateTokens(user.id);
+  return { user, ...tokens };
+}
+
+module.exports = { signup, login, refreshAccessToken, loginWithGoogle };

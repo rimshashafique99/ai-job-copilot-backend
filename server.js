@@ -4,8 +4,13 @@ const helmet = require('helmet');
 const morgan = require('morgan');
 const config = require('./config');
 const pool = require('./db');
-const authRoutes = require('./routes/auth');
+
 const errorHandler = require('./middleware/errorHandler');
+const cookieParser = require('cookie-parser');
+
+
+const authRoutes = require('./routes/auth');
+const profileRoutes = require('./routes/profile');
 
 const app = express();
 
@@ -22,8 +27,11 @@ app.get('/api/health', async (req, res) => {
     res.status(500).json({ status: 'error', db: 'disconnected' });
   }
 });
+app.use(cors({ origin: config.frontendUrl, credentials: true }));
+app.use(cookieParser());
 
 app.use('/api/auth', authRoutes);
+app.use('/api/profile', profileRoutes);
 
 app.use(errorHandler);
 
