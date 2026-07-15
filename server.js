@@ -9,8 +9,9 @@ const errorHandler = require('./middleware/errorHandler');
 const cookieParser = require('cookie-parser');
 
 
-const authRoutes = require('./routes/auth');
-const profileRoutes = require('./routes/profile');
+const authRoutes = require('./routes/authRoutes');
+const profileRoutes = require('./routes/profileRoutes');
+const settingsRoutes = require('./routes/settingsRoutes');
 
 const app = express();
 
@@ -32,6 +33,7 @@ app.use(cookieParser());
 
 app.use('/api/auth', authRoutes);
 app.use('/api/profile', profileRoutes);
+app.use('/api/settings', settingsRoutes);
 
 app.use(errorHandler);
 
