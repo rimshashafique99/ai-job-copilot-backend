@@ -12,6 +12,9 @@ const cookieParser = require('cookie-parser');
 const authRoutes = require('./routes/authRoutes');
 const profileRoutes = require('./routes/profileRoutes');
 const settingsRoutes = require('./routes/settingsRoutes');
+const analyzeRoutes = require('./routes/analyzeRoutes');
+const trackerRoutes = require('./routes/trackerRoutes');
+
 
 const app = express();
 
@@ -34,6 +37,8 @@ app.use(cookieParser());
 app.use('/api/auth', authRoutes);
 app.use('/api/profile', profileRoutes);
 app.use('/api/settings', settingsRoutes);
+app.use('/api/analyze', analyzeRoutes);
+app.use('/api/tracker', trackerRoutes);
 
 app.use(errorHandler);
 
