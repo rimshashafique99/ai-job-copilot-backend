@@ -1,8 +1,8 @@
-const { GoogleGenerativeAI } = require('@google/generative-ai');
+const Groq = require('groq-sdk');
 const AppError = require('../utils/AppError');
 
-const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
-const model = genAI.getGenerativeModel({ model: 'gemini-2.0-flash' });
+const groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
+const MODEL = 'llama-3.3-70b-versatile';
 
 function buildFullPrompt({ cvText, jobDescription, companyName }) {
   return `You are a job application assistant. Given the candidate's CV and a job description, produce a JSON object with EXACTLY these keys: "role", "coverLetter", "coldEmail", "gapAnalysis", "cvBullets".
@@ -46,27 +46,38 @@ ${jobDescription}
 
 Company: ${companyName}`;
 }
-
 function parseJsonResponse(rawText) {
-  const cleaned = rawText.replace(/```json|```/g, '').trim();
+  const cleaned = rawText
+    .replace(/```json|```/g, '')
+    .trim()
+    .replace(/\r\n|\r|\n/g, '\\n'); // escape literal newlines inside string values
+
   try {
     return JSON.parse(cleaned);
   } catch (err) {
+    console.log('RAW AI RESPONSE THAT FAILED TO PARSE:', rawText);
     throw new AppError('Failed to parse AI response', 502);
   }
 }
-
 async function generateFullAnalysis({ cvText, jobDescription, companyName }) {
   const prompt = buildFullPrompt({ cvText, jobDescription, companyName });
-  const result = await model.generateContent(prompt);
-  const text = result.response.text();
-  return parseJsonResponse(text); // { role, coverLetter, coldEmail, gapAnalysis, cvBullets }
+  const completion = await groq.chat.completions.create({
+    model: MODEL,
+    messages: [{ role: 'user', content: prompt }],
+    temperature: 0.7
+  });
+  const text = completion.choices[0].message.content;
+  return parseJsonResponse(text);
 }
 
 async function generateSingleOutput({ cvText, jobDescription, companyName, type }) {
   const prompt = buildSinglePrompt({ cvText, jobDescription, companyName, type });
-  const result = await model.generateContent(prompt);
-  const text = result.response.text();
+  const completion = await groq.chat.completions.create({
+    model: MODEL,
+    messages: [{ role: 'user', content: prompt }],
+    temperature: 0.7
+  });
+  const text = completion.choices[0].message.content;
   const parsed = parseJsonResponse(text);
   return parsed[type];
 }

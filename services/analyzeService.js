@@ -5,7 +5,7 @@ const geminiService = require('./geminiService');
 const AppError = require('../utils/AppError');
 
 async function runFullAnalysis({ userId, companyName, jobDescription, jobApplicationId = null }) {
-  const profile = await profileService.getProfile(userId);
+  const { profile } = await profileService.getProfile(userId);
   if (!profile || !profile.cv_text) {
     throw new AppError('Please upload your CV before analyzing a job.', 400);
   }
@@ -57,7 +57,7 @@ async function regenerateOutput({ userId, jobApplicationId, type }) {
     throw new AppError('This application has no job description to regenerate from.', 400);
   }
 
-  const profile = await profileService.getProfile(userId);
+ const { profile } = await profileService.getProfile(userId);
   if (!profile || !profile.cv_text) {
     throw new AppError('Please upload your CV before regenerating.', 400);
   }

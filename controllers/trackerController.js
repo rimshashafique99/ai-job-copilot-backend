@@ -2,13 +2,13 @@ const trackerService = require('../services/trackerService');
 
 async function create(req, res, next) {
   try {
-    const { role, companyName, stage, tag, jobLink } = req.body;
+    const { role, companyName, jobTitle, stage, tag, jobLink } = req.body;
     if (!companyName) {
       return res.status(400).json({ success: false, error: 'companyName is required.' });
     }
 
     const jobApplication = await trackerService.createManual({
-      userId: req.user.id, role, companyName, stage, tag, jobLink
+      userId: req.user.id, role, companyName, jobTitle, stage, tag, jobLink
     });
 
     res.status(201).json({ success: true, data: jobApplication });
@@ -37,13 +37,15 @@ async function getById(req, res, next) {
 
 async function update(req, res, next) {
   try {
-    const { role, companyName, jobLink, tag, stage } = req.body;
+    const { role, companyName, jobTitle, jobLink, tag, stage, interviewDate } = req.body;
     const fields = {};
     if (role !== undefined) fields.role = role;
     if (companyName !== undefined) fields.companyName = companyName;
+    if (jobTitle !== undefined) fields.jobTitle = jobTitle;
     if (jobLink !== undefined) fields.jobLink = jobLink;
     if (tag !== undefined) fields.tag = tag;
     if (stage !== undefined) fields.stage = stage;
+    if (interviewDate !== undefined) fields.interviewDate = interviewDate;
 
     const updated = await trackerService.updateOne(req.user.id, req.params.id, fields);
     res.status(200).json({ success: true, data: updated });

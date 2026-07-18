@@ -2,14 +2,15 @@ const jobApplicationRepo = require('../repositories/jobApplicationRepository');
 const aiOutputRepo = require('../repositories/aiOutputRepository');
 const AppError = require('../utils/AppError');
 
-async function createManual({ userId, role, companyName, stage, tag, jobLink }) {
+async function createManual({ userId, role, companyName, jobTitle, stage, tag, jobLink }) {
   return jobApplicationRepo.create({
     userId,
     role: role || null,
     companyName,
+    jobTitle: jobTitle || null,
     jobLink: jobLink || null,
     tag: tag || null,
-    stage: stage || 'applied'
+    stage: stage || 'saved'
   });
 }
 
