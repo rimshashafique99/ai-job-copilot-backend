@@ -1,5 +1,7 @@
-const { Pool } = require('pg');
+const { Pool , types } = require('pg');
 const config = require('../config');
+
+types.setTypeParser(1082, (val) => val); // DATE columns come back as raw strings, no timezone shifting
 
 const pool = new Pool({ connectionString: config.databaseUrl });
 
