@@ -82,4 +82,4 @@ async function generateSingleOutput({ cvText, jobDescription, companyName, type 
   return parsed[type];
 }
 
-module.exports = { generateFullAnalysis, generateSingleOutput };
+module.exports = { generateFullAnalysis, generateSingleOutput, parseJsonResponse};
