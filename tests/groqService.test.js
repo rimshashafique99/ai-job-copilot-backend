@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { parseJsonResponse } from './groqService';
+import { parseJsonResponse } from '../services/groqService';
 
 describe('parseJsonResponse', () => {
   it('parses valid JSON input', () => {
