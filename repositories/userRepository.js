@@ -47,5 +47,21 @@ async function updateUser(userId, { fullName, targetRole }) {
   );
   return result.rows[0];
 }
+async function setOtp(userId, otpCode, otpExpiresAt) {
+  await pool.query(
+    'UPDATE users SET otp_code = $1, otp_expires_at = $2 WHERE id = $3',
+    [otpCode, otpExpiresAt, userId]
+  );
+}
 
-module.exports = { findByEmail, findById, createUser, findByGoogleId, createGoogleUser, updateUser };
+async function verifyOtpAndActivate(userId) {
+  const result = await pool.query(
+    `UPDATE users SET is_verified = true, otp_code = NULL, otp_expires_at = NULL
+     WHERE id = $1 RETURNING id, email, full_name, target_role, created_at`,
+    [userId]
+  );
+  return result.rows[0];
+}
+
+
+module.exports = { findByEmail, findById, createUser, findByGoogleId, createGoogleUser, updateUser, setOtp, verifyOtpAndActivate  };

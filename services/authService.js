@@ -12,6 +12,13 @@ function generateTokens(userId) {
   return { accessToken, refreshToken };
 }
 
+const crypto = require('crypto');
+const { sendOtpEmail } = require('./emailService');
+
+function generateOtp() {
+  return crypto.randomInt(100000, 999999).toString();
+}
+
 async function signup({ email, password, fullName, targetRole }) {
   const existing = await userRepository.findByEmail(email);
   if (existing) {
@@ -20,25 +27,56 @@ async function signup({ email, password, fullName, targetRole }) {
 
   const passwordHash = await bcrypt.hash(password, SALT_ROUNDS);
   const user = await userRepository.createUser({ email, passwordHash, fullName, targetRole });
-  const tokens = generateTokens(user.id);
 
-  return { user, ...tokens };
+  const otp = generateOtp();
+  const expiresAt = new Date(Date.now() + 10 * 60 * 1000);
+  await userRepository.setOtp(user.id, otp, expiresAt);
+  await sendOtpEmail(email, otp);
+
+  return { email: user.email }; // no tokens yet — not verified
+}
+
+async function verifyOtp({ email, otp }) {
+  const user = await userRepository.findByEmail(email);
+  if (!user) throw new AppError('User not found', 404);
+  if (user.is_verified) throw new AppError('Email already verified', 400);
+  if (!user.otp_code || user.otp_code !== otp) {
+    throw new AppError('Invalid verification code', 400);
+  }
+  if (new Date() > new Date(user.otp_expires_at)) {
+    throw new AppError('Verification code expired', 400);
+  }
+
+  const verifiedUser = await userRepository.verifyOtpAndActivate(user.id);
+  const tokens = generateTokens(verifiedUser.id);
+  return { user: verifiedUser, ...tokens };
+}
+
+async function resendOtp(email) {
+  const user = await userRepository.findByEmail(email);
+  if (!user) throw new AppError('User not found', 404);
+  if (user.is_verified) throw new AppError('Email already verified', 400);
+
+  const otp = generateOtp();
+  const expiresAt = new Date(Date.now() + 10 * 60 * 1000);
+  await userRepository.setOtp(user.id, otp, expiresAt);
+  await sendOtpEmail(email, otp);
+  return { email };
 }
 
 async function login({ email, password }) {
   const user = await userRepository.findByEmail(email);
-  if (!user) {
-    throw new AppError('Invalid email or password', 401);
-  }
+  if (!user) throw new AppError('Invalid email or password', 401);
 
   const isMatch = await bcrypt.compare(password, user.password_hash);
-  if (!isMatch) {
-    throw new AppError('Invalid email or password', 401);
+  if (!isMatch) throw new AppError('Invalid email or password', 401);
+
+  if (!user.is_verified) {
+    throw new AppError('Please verify your email before logging in', 403);
   }
 
   const tokens = generateTokens(user.id);
-  const { password_hash, ...safeUser } = user; // never send the hash back
-
+  const { password_hash, otp_code, otp_expires_at, ...safeUser } = user;
   return { user: safeUser, ...tokens };
 }
 
@@ -79,5 +117,4 @@ async function loginWithGoogle(idToken) {
   const tokens = generateTokens(user.id);
   return { user, ...tokens };
 }
-
-module.exports = { signup, login, refreshAccessToken, loginWithGoogle };
+module.exports = { signup, login, refreshAccessToken, loginWithGoogle, verifyOtp, resendOtp };

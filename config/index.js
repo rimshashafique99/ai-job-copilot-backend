@@ -14,4 +14,8 @@ module.exports = {
   jwtRefreshSecret: process.env.JWT_REFRESH_SECRET,
   frontendUrl: process.env.FRONTEND_URL || "http://localhost:5173",
   groqApiKey: process.env.GROQ_API_KEY,
+  smtpHost: process.env.SMTP_HOST,
+  smtpPort: Number(process.env.SMTP_PORT),
+  smtpUser: process.env.SMTP_USER,
+  smtpPass: process.env.SMTP_PASS,
 };

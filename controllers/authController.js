@@ -7,13 +7,39 @@ async function signup(req, res, next) {
     if (!email || !password || !fullName) {
       return res.status(400).json({ success: false, error: 'email, password, and fullName are required' });
     }
-    const { user, accessToken, refreshToken } = await authService.signup({ email, password, fullName, targetRole });
-    setAuthCookies(res, accessToken, refreshToken);
-    res.status(201).json({ success: true, data: { user } }); // tokens no longer in the body
+    const { email: pendingEmail } = await authService.signup({ email, password, fullName, targetRole });
+    res.status(201).json({ success: true, data: { email: pendingEmail } });
   } catch (err) {
     next(err);
   }
 }
+
+async function verifyOtp(req, res, next) {
+  try {
+    const { email, otp } = req.body;
+    if (!email || !otp) {
+      return res.status(400).json({ success: false, error: 'email and otp are required' });
+    }
+    const { user, accessToken, refreshToken } = await authService.verifyOtp({ email, otp });
+    setAuthCookies(res, accessToken, refreshToken);
+    res.json({ success: true, data: { user } });
+  } catch (err) {
+    next(err);
+  }
+}
+
+async function resendOtp(req, res, next) {
+  try {
+    const { email } = req.body;
+    if (!email) return res.status(400).json({ success: false, error: 'email is required' });
+    await authService.resendOtp(email);
+    res.json({ success: true, message: 'Verification code resent' });
+  } catch (err) {
+    next(err);
+  }
+}
+
+
 
 async function login(req, res, next) {
   try {
@@ -78,4 +104,4 @@ async function me(req, res, next) {
   }
 }
 
-module.exports = { signup, login, refresh, googleLogin, logout, me };
+module.exports = { signup, login, refresh, googleLogin, logout, me, verifyOtp, resendOtp };
