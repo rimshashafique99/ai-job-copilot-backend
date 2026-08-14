@@ -18,7 +18,8 @@ const dashboardRoutes = require("./routes/dashboardRoutes");
 const app = express();
 
 app.use(helmet());
-app.use(cors({ origin: config.frontendUrl }));
+app.use(cors({ origin: config.frontendUrl, credentials: true }));
+app.use(cookieParser());
 app.use(express.json());
 app.use(morgan("dev"));
 
@@ -30,8 +31,6 @@ app.get("/api/health", async (req, res) => {
     res.status(500).json({ status: "error", db: "disconnected" });
   }
 });
-app.use(cors({ origin: config.frontendUrl, credentials: true }));
-app.use(cookieParser());
 
 app.use("/api/auth", authRoutes);
 app.use("/api/profile", profileRoutes);
