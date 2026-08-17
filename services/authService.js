@@ -6,6 +6,14 @@ const userRepository = require('../repositories/userRepository');
 
 const SALT_ROUNDS = 12;
 
+
+function generateOtp() {
+  return crypto.randomInt(100000, 999999).toString();
+}
+
+function hashOtp(otp) {
+  return crypto.createHash('sha256').update(otp).digest('hex');
+}
 function generateTokens(userId) {
   const accessToken = jwt.sign({ userId }, config.jwtAccessSecret, { expiresIn: '15m' });
   const refreshToken = jwt.sign({ userId }, config.jwtRefreshSecret, { expiresIn: '7d' });
@@ -21,26 +29,35 @@ function generateOtp() {
 
 async function signup({ email, password, fullName, targetRole }) {
   const existing = await userRepository.findByEmail(email);
-  if (existing) {
+
+  if (existing && existing.is_verified) {
     throw new AppError('Email already registered', 409);
   }
 
   const passwordHash = await bcrypt.hash(password, SALT_ROUNDS);
-  const user = await userRepository.createUser({ email, passwordHash, fullName, targetRole });
+  let user;
 
-  const otp = generateOtp();
-  const expiresAt = new Date(Date.now() + 10 * 60 * 1000);
-  await userRepository.setOtp(user.id, otp, expiresAt);
-  await sendOtpEmail(email, otp);
+  if (existing && !existing.is_verified) {
+    // stale unverified signup — overwrite details, issue a fresh OTP
+    user = await userRepository.updateUnverifiedUser(existing.id, { passwordHash, fullName, targetRole });
+  } else {
+    user = await userRepository.createUser({ email, passwordHash, fullName, targetRole });
+  }
+const otp = generateOtp();
+const otpHash = hashOtp(otp);
+const expiresAt = new Date(Date.now() + 10 * 60 * 1000);
+await userRepository.setOtp(user.id, otpHash, expiresAt);
+await sendOtpEmail(email, otp);
 
-  return { email: user.email }; // no tokens yet — not verified
+  return { email: user.email };
 }
-
 async function verifyOtp({ email, otp }) {
   const user = await userRepository.findByEmail(email);
   if (!user) throw new AppError('User not found', 404);
   if (user.is_verified) throw new AppError('Email already verified', 400);
-  if (!user.otp_code || user.otp_code !== otp) {
+
+  const otpHash = hashOtp(otp);
+  if (!user.otp_code || user.otp_code !== otpHash) {
     throw new AppError('Invalid verification code', 400);
   }
   if (new Date() > new Date(user.otp_expires_at)) {
@@ -58,12 +75,12 @@ async function resendOtp(email) {
   if (user.is_verified) throw new AppError('Email already verified', 400);
 
   const otp = generateOtp();
+  const otpHash = hashOtp(otp);
   const expiresAt = new Date(Date.now() + 10 * 60 * 1000);
-  await userRepository.setOtp(user.id, otp, expiresAt);
+  await userRepository.setOtp(user.id, otpHash, expiresAt);
   await sendOtpEmail(email, otp);
   return { email };
 }
-
 async function login({ email, password }) {
   const user = await userRepository.findByEmail(email);
   if (!user) throw new AppError('Invalid email or password', 401);

@@ -62,6 +62,16 @@ async function verifyOtpAndActivate(userId) {
   );
   return result.rows[0];
 }
+async function updateUnverifiedUser(userId, { passwordHash, fullName, targetRole }) {
+  const result = await pool.query(
+    `UPDATE users SET password_hash = $1, full_name = $2, target_role = $3
+     WHERE id = $4 AND is_verified = false
+     RETURNING id, email, full_name, target_role, created_at`,
+    [passwordHash, fullName, targetRole || null, userId]
+  );
+  return result.rows[0];
+}
 
 
-module.exports = { findByEmail, findById, createUser, findByGoogleId, createGoogleUser, updateUser, setOtp, verifyOtpAndActivate  };
+
+module.exports = { findByEmail, findById, createUser, findByGoogleId, createGoogleUser, updateUser, setOtp, verifyOtpAndActivate, updateUnverifiedUser };
