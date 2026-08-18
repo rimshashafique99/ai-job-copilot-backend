@@ -71,7 +71,21 @@ async function updateUnverifiedUser(userId, { passwordHash, fullName, targetRole
   );
   return result.rows[0];
 }
+async function setResetToken(userId, tokenHash, expiresAt) {
+  await pool.query(
+    'UPDATE users SET reset_token = $1, reset_token_expires_at = $2 WHERE id = $3',
+    [tokenHash, expiresAt, userId]
+  );
+}
+
+async function updatePasswordAndClearReset(userId, passwordHash) {
+  await pool.query(
+    `UPDATE users SET password_hash = $1, reset_token = NULL, reset_token_expires_at = NULL
+     WHERE id = $2`,
+    [passwordHash, userId]
+  );
+}
 
 
 
-module.exports = { findByEmail, findById, createUser, findByGoogleId, createGoogleUser, updateUser, setOtp, verifyOtpAndActivate, updateUnverifiedUser };
+module.exports = { findByEmail, findById, createUser, findByGoogleId, createGoogleUser, updateUser, setOtp, verifyOtpAndActivate, updateUnverifiedUser, setResetToken, updatePasswordAndClearReset };

@@ -16,5 +16,15 @@ async function sendOtpEmail(email, otp) {
     html: `<p>Your verification code is:</p><h2>${otp}</h2><p>This code expires in 10 minutes.</p>`,
   });
 }
+async function sendResetOtpEmail(email, otp) {
+  await transporter.sendMail({
+    from: `"AI Job Copilot" <${config.smtpUser}>`,
+    to: email,
+    subject: 'Your password reset code — AI Job Copilot',
+    html: `<p>Your password reset code is:</p><h2>${otp}</h2><p>This code expires in 10 minutes. If you didn't request this, you can safely ignore this email.</p>`,
+  });
+}
 
-module.exports = { sendOtpEmail };
+module.exports = { sendOtpEmail, sendResetOtpEmail };
+
+

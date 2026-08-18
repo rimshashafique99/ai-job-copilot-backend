@@ -3,7 +3,8 @@ const jwt = require('jsonwebtoken');
 const config = require('../config');
 const AppError = require('../utils/AppError');
 const userRepository = require('../repositories/userRepository');
-
+const crypto = require('crypto');
+const { sendOtpEmail, sendResetOtpEmail } = require('./emailService');
 const SALT_ROUNDS = 12;
 
 
@@ -11,8 +12,8 @@ function generateOtp() {
   return crypto.randomInt(100000, 999999).toString();
 }
 
-function hashOtp(otp) {
-  return crypto.createHash('sha256').update(otp).digest('hex');
+function hashToken(value) {
+  return crypto.createHash('sha256').update(value).digest('hex');
 }
 function generateTokens(userId) {
   const accessToken = jwt.sign({ userId }, config.jwtAccessSecret, { expiresIn: '15m' });
@@ -20,8 +21,7 @@ function generateTokens(userId) {
   return { accessToken, refreshToken };
 }
 
-const crypto = require('crypto');
-const { sendOtpEmail } = require('./emailService');
+
 
 function generateOtp() {
   return crypto.randomInt(100000, 999999).toString();
@@ -81,6 +81,58 @@ async function resendOtp(email) {
   await sendOtpEmail(email, otp);
   return { email };
 }
+async function forgotPassword(email) {
+  const user = await userRepository.findByEmail(email);
+  if (!user) return; // don't reveal whether the email exists
+
+  const otp = generateOtp();
+  const otpHash = hashToken(otp);
+  const expiresAt = new Date(Date.now() + 10 * 60 * 1000);
+
+  await userRepository.setResetToken(user.id, otpHash, expiresAt);
+  await sendResetOtpEmail(email, otp);
+}
+
+async function verifyResetOtp({ email, otp }) {
+  const user = await userRepository.findByEmail(email);
+  if (!user || !user.reset_token) {
+    throw new AppError('Invalid or expired code', 400);
+  }
+  if (hashToken(otp) !== user.reset_token) {
+    throw new AppError('Invalid or expired code', 400);
+  }
+  if (new Date() > new Date(user.reset_token_expires_at)) {
+    throw new AppError('Code has expired', 400);
+  }
+
+  // OTP confirmed — issue a short-lived session token to authorize the actual reset
+  const sessionToken = crypto.randomBytes(32).toString('hex');
+  const sessionTokenHash = hashToken(sessionToken);
+  const expiresAt = new Date(Date.now() + 10 * 60 * 1000);
+  await userRepository.setResetToken(user.id, sessionTokenHash, expiresAt);
+
+  return { resetToken: sessionToken };
+}
+
+async function resetPassword({ email, resetToken, password }) {
+  const user = await userRepository.findByEmail(email);
+  if (!user || !user.reset_token) {
+    throw new AppError('Reset session expired. Please start again.', 400);
+  }
+  if (hashToken(resetToken) !== user.reset_token) {
+    throw new AppError('Reset session expired. Please start again.', 400);
+  }
+  if (new Date() > new Date(user.reset_token_expires_at)) {
+    throw new AppError('Reset session expired. Please start again.', 400);
+  }
+
+  const passwordHash = await bcrypt.hash(password, SALT_ROUNDS);
+  await userRepository.updatePasswordAndClearReset(user.id, passwordHash);
+}
+
+
+
+
 async function login({ email, password }) {
   const user = await userRepository.findByEmail(email);
   if (!user) throw new AppError('Invalid email or password', 401);
@@ -134,4 +186,4 @@ async function loginWithGoogle(idToken) {
   const tokens = generateTokens(user.id);
   return { user, ...tokens };
 }
-module.exports = { signup, login, refreshAccessToken, loginWithGoogle, verifyOtp, resendOtp };
+module.exports = { signup, login, refreshAccessToken, loginWithGoogle, verifyOtp, resendOtp, forgotPassword, verifyResetOtp, resetPassword };

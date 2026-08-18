@@ -87,6 +87,47 @@ async function refresh(req, res, next) {
     next(err);
   }
 }
+async function forgotPassword(req, res, next) {
+  try {
+    const { email } = req.body;
+    if (!email) return res.status(400).json({ success: false, error: 'email is required' });
+    await authService.forgotPassword(email);
+    res.json({ success: true, message: 'If an account exists for this email, a reset code has been sent.' });
+  } catch (err) {
+    next(err);
+  }
+}
+
+async function verifyResetOtp(req, res, next) {
+  try {
+    const { email, otp } = req.body;
+    if (!email || !otp) {
+      return res.status(400).json({ success: false, error: 'email and otp are required' });
+    }
+    const { resetToken } = await authService.verifyResetOtp({ email, otp });
+    res.json({ success: true, data: { resetToken } });
+  } catch (err) {
+    next(err);
+  }
+}
+
+async function resetPassword(req, res, next) {
+  try {
+    const { email, resetToken, password } = req.body;
+    if (!email || !resetToken || !password) {
+      return res.status(400).json({ success: false, error: 'email, resetToken, and password are required' });
+    }
+    if (password.length < 8) {
+      return res.status(400).json({ success: false, error: 'Password must be at least 8 characters' });
+    }
+    await authService.resetPassword({ email, resetToken, password });
+    res.json({ success: true, message: 'Password updated successfully' });
+  } catch (err) {
+    next(err);
+  }
+}
+
+
 
 async function logout(req, res) {
   clearAuthCookies(res);
@@ -104,4 +145,4 @@ async function me(req, res, next) {
   }
 }
 
-module.exports = { signup, login, refresh, googleLogin, logout, me, verifyOtp, resendOtp };
+module.exports = { signup, login, refresh, googleLogin, logout, me, verifyOtp, resendOtp, forgotPassword, verifyResetOtp, resetPassword };
