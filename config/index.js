@@ -18,4 +18,7 @@ module.exports = {
   smtpPort: Number(process.env.SMTP_PORT),
   smtpUser: process.env.SMTP_USER,
   smtpPass: process.env.SMTP_PASS,
+   cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+  api_key: process.env.CLOUDINARY_API_KEY,
+  api_secret: process.env.CLOUDINARY_API_SECRET,
 };

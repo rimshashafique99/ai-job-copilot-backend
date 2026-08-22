@@ -32,13 +32,13 @@ async function getStats(userId) {
   );
   const interviewingCount = parseInt(interviewingResult.rows[0].count, 10);
 
- const scheduledThisWeekResult = await db.query(
-  `SELECT COUNT(*) FROM job_applications
-   WHERE user_id = $1 AND stage = 'interviewing'
-     AND interview_date >= CURRENT_DATE
-     AND interview_date < CURRENT_DATE + INTERVAL '7 days'`,
-  [userId]
-);
+  const scheduledThisWeekResult = await db.query(
+    `SELECT COUNT(*) FROM job_applications
+     WHERE user_id = $1 AND stage = 'interviewing'
+       AND interview_date >= CURRENT_DATE
+       AND interview_date < CURRENT_DATE + INTERVAL '7 days'`,
+    [userId]
+  );
   const scheduledThisWeek = parseInt(scheduledThisWeekResult.rows[0].count, 10);
 
   const offersResult = await db.query(
@@ -48,7 +48,7 @@ async function getStats(userId) {
   const offersCount = parseInt(offersResult.rows[0].count, 10);
 
   const recentResult = await db.query(
-    `SELECT id, company_name, role, created_at, stage
+    `SELECT id, company_name, job_title, role, created_at, stage
      FROM job_applications
      WHERE user_id = $1
      ORDER BY created_at DESC
@@ -61,7 +61,13 @@ async function getStats(userId) {
     totalApplicationsGrowthPercent: growthPercent,
     interviewing: { count: interviewingCount, scheduledThisWeek },
     offers: { count: offersCount },
-    recentApplications: recentResult.rows
+    recentApplications: recentResult.rows.map((row) => ({
+      id: row.id,
+      company_name: row.company_name,
+      job_title: row.job_title ?? row.role, // job_title is usually null until full analysis runs; role is the earlier-captured fallback
+      created_at: row.created_at,
+      stage: row.stage,
+    })),
   };
 }
 
