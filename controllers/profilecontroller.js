@@ -21,11 +21,20 @@ async function updateProfile(req, res, next) {
 
 async function uploadCv(req, res, next) {
   try {
-    const profile = await profileService.uploadCv(req.user.id, req.file?.buffer);
+    const profile = await profileService.uploadCv(req.user.id, req.file?.buffer, req.file?.originalname);
     res.json({ success: true, data: { profile } });
   } catch (err) {
     next(err);
   }
 }
 
-module.exports = { getProfile, updateProfile, uploadCv };
+async function deleteCv(req, res, next) {
+  try {
+    const profile = await profileService.deleteCv(req.user.id);
+    res.json({ success: true, data: { profile } });
+  } catch (err) {
+    next(err);
+  }
+}
+
+module.exports = { getProfile, updateProfile, uploadCv , deleteCv};

@@ -7,7 +7,7 @@ async function findByUserId(userId) {
 
 // Builds UPDATE SQL dynamically from whichever fields were actually provided —
 // so a summary-only save doesn't overwrite cv_text with undefined, and vice versa.
-async function upsertProfile(userId, { cvText, cvFileUrl, summary } = {}) {
+async function upsertProfile(userId, { cvText, cvFileUrl, cvFileName, cvPublicId, summary } = {}) {
   const existing = await findByUserId(userId);
 
   const fields = [];
@@ -21,6 +21,14 @@ async function upsertProfile(userId, { cvText, cvFileUrl, summary } = {}) {
   if (cvFileUrl !== undefined) {
     fields.push(`cv_file_url = $${i++}`);
     values.push(cvFileUrl);
+  }
+  if (cvFileName !== undefined) {
+    fields.push(`cv_file_name = $${i++}`);
+    values.push(cvFileName);
+  }
+  if (cvPublicId !== undefined) {
+    fields.push(`cv_public_id = $${i++}`);
+    values.push(cvPublicId);
   }
   if (summary !== undefined) {
     fields.push(`summary = $${i++}`);
@@ -37,7 +45,6 @@ async function upsertProfile(userId, { cvText, cvFileUrl, summary } = {}) {
     return result.rows[0];
   }
 
-  // insert path — only include columns that were actually passed
   const columns = ['user_id'];
   const placeholders = ['$1'];
   const insertValues = [userId];
@@ -53,6 +60,16 @@ async function upsertProfile(userId, { cvText, cvFileUrl, summary } = {}) {
     placeholders.push(`$${j++}`);
     insertValues.push(cvFileUrl);
   }
+  if (cvFileName !== undefined) {
+    columns.push('cv_file_name');
+    placeholders.push(`$${j++}`);
+    insertValues.push(cvFileName);
+  }
+  if (cvPublicId !== undefined) {
+    columns.push('cv_public_id');
+    placeholders.push(`$${j++}`);
+    insertValues.push(cvPublicId);
+  }
   if (summary !== undefined) {
     columns.push('summary');
     placeholders.push(`$${j++}`);
@@ -65,5 +82,4 @@ async function upsertProfile(userId, { cvText, cvFileUrl, summary } = {}) {
   );
   return result.rows[0];
 }
-
 module.exports = { findByUserId, upsertProfile };
