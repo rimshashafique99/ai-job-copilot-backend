@@ -22,7 +22,10 @@ app.use(cors({ origin: config.frontendUrl, credentials: true }));
 app.use(cookieParser());
 app.use(express.json());
 app.use(morgan("dev"));
-
+if (process.env.NODE_ENV === 'test') {
+  const testRoutes = require('./routes/testRoutes');
+  app.use('/api/test', testRoutes);
+}
 app.get("/api/health", async (req, res) => {
   try {
     await pool.query("SELECT 1");
