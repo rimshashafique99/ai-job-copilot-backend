@@ -1,7 +1,7 @@
-const express = require("express");
-const multer = require("multer");
-const requireAuth = require("../middleware/auth");
-const profileController = require("../controllers/profilecontroller");
+const express = require('express');
+const multer = require('multer');
+const requireAuth = require('../middleware/auth');
+const profileController = require('../controllers/profilecontroller');
 
 const upload = multer({
   storage: multer.memoryStorage(), // keeps file in RAM, never touches disk — matches our "don't store the raw PDF" decision
@@ -16,13 +16,9 @@ const upload = multer({
 
 const router = express.Router();
 
-router.get("/", requireAuth, profileController.getProfile);
-router.put("/", requireAuth, profileController.updateProfile);
-router.post(
-  "/cv",
-  requireAuth,
-  upload.single("cv"),
-  profileController.uploadCv,
-);
+router.get('/', requireAuth, profileController.getProfile);
+router.put('/', requireAuth, profileController.updateProfile);
+router.post('/cv', requireAuth, upload.single('cv'), profileController.uploadCv);
+router.delete('/cv', requireAuth, profileController.deleteCv);
 
 module.exports = router;

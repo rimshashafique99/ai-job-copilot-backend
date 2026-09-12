@@ -1,7 +1,8 @@
-const profileRepository = require('../repositories/profileRepository');
-const userRepository = require('../repositories/userRepository');
-const { extractTextFromPdf } = require('./pdfParse.service');
-const AppError = require('../utils/AppError');
+const profileRepository = require("../repositories/profileRepository");
+const userRepository = require("../repositories/userRepository");
+const { extractTextFromPdf } = require("./pdfParse.service");
+const cloudinary = require("../config/cloudinary");
+const AppError = require("../utils/AppError");
 
 async function getProfile(userId) {
   const user = await userRepository.findById(userId);
@@ -9,22 +10,75 @@ async function getProfile(userId) {
   return { user, profile };
 }
 
-async function updateProfile(userId, { fullName, targetRole }) {
+// Orchestrates two tables: users (name/role) and profiles (summary).
+// Kept in the service layer rather than the repository, since it's
+// a business operation spanning two entities, not a single-table concern.
+async function updateProfile(userId, { fullName, targetRole, summary }) {
   if (!fullName) {
-    throw new AppError('fullName is required', 400);
+    throw new AppError("fullName is required", 400);
   }
-  return userRepository.updateUser(userId, { fullName, targetRole });
+
+  const user = await userRepository.updateUser(userId, {
+    fullName,
+    targetRole,
+  });
+
+  let profile = null;
+  if (summary !== undefined) {
+    profile = await profileRepository.upsertProfile(userId, { summary });
+  }
+
+  return { user, profile };
 }
 
-async function uploadCv(userId, fileBuffer) {
+async function uploadCv(userId, fileBuffer, originalName) {
   if (!fileBuffer) {
-    throw new AppError('No file uploaded', 400);
+    throw new AppError("No file uploaded", 400);
   }
+
   const cvText = await extractTextFromPdf(fileBuffer);
   if (!cvText) {
-    throw new AppError('Could not extract text from this PDF', 422);
+    throw new AppError("Could not extract text from this PDF", 422);
   }
-  return profileRepository.upsertProfile(userId, { cvText });
+
+  const cloudinaryResult = await new Promise((resolve, reject) => {
+    const stream = cloudinary.uploader.upload_stream(
+      {
+        resource_type: "raw",
+        folder: "cv-uploads",
+        public_id: `cv-${userId}-${Date.now()}`, // no extension here
+        format: "pdf", // <-- this appends .pdf properly
+      },
+      (err, result) => (err ? reject(err) : resolve(result)),
+    );
+    stream.end(fileBuffer);
+  });
+
+  return profileRepository.upsertProfile(userId, {
+    cvText,
+    cvFileUrl: cloudinaryResult.secure_url,
+    cvFileName: originalName || null,
+    cvPublicId: cloudinaryResult.public_id,
+  });
 }
 
-module.exports = { getProfile, updateProfile, uploadCv };
+async function deleteCv(userId) {
+  const profile = await profileRepository.findByUserId(userId);
+
+  if (!profile || !profile.cv_public_id) {
+    throw new AppError("No CV to delete", 404);
+  }
+
+  await cloudinary.uploader.destroy(profile.cv_public_id, {
+    resource_type: "raw",
+  });
+
+  return profileRepository.upsertProfile(userId, {
+    cvText: null,
+    cvFileUrl: null,
+    cvFileName: null,
+    cvPublicId: null,
+  });
+}
+
+module.exports = { getProfile, updateProfile, uploadCv, deleteCv };
