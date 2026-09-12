@@ -135,6 +135,7 @@ async function resetPassword({ email, resetToken, password }) {
 
 async function login({ email, password }) {
   const user = await userRepository.findByEmail(email);
+  console.log('Login attempt for:', email, '→ found user:', user ? user.id : 'NONE');
   if (!user) throw new AppError('Invalid email or password', 401);
 
   const isMatch = await bcrypt.compare(password, user.password_hash);

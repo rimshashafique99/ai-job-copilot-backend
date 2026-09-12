@@ -2,12 +2,12 @@
 -- PostgreSQL database dump
 --
 
-\restrict PUWPa61WhWekwptRYbEJYlrEVKfmODp4U6A3KuFCvOOf5QKcxRSPTWMuUl4YC3E
+
 
 -- Dumped from database version 18.4
 -- Dumped by pg_dump version 18.4
 
--- Started on 2026-08-03 18:01:17
+-- Started on 2026-09-12 18:13:01
 
 SET statement_timeout = 0;
 SET lock_timeout = 0;
@@ -22,7 +22,7 @@ SET client_min_messages = warning;
 SET row_security = off;
 
 --
--- TOC entry 2 (class 3079 OID 24581)
+-- TOC entry 2 (class 3079 OID 40965)
 -- Name: pgcrypto; Type: EXTENSION; Schema: -; Owner: -
 --
 
@@ -30,7 +30,7 @@ CREATE EXTENSION IF NOT EXISTS pgcrypto WITH SCHEMA public;
 
 
 --
--- TOC entry 4994 (class 0 OID 0)
+-- TOC entry 4995 (class 0 OID 0)
 -- Dependencies: 2
 -- Name: EXTENSION pgcrypto; Type: COMMENT; Schema: -; Owner: 
 --
@@ -43,7 +43,7 @@ SET default_tablespace = '';
 SET default_table_access_method = heap;
 
 --
--- TOC entry 223 (class 1259 OID 24676)
+-- TOC entry 220 (class 1259 OID 41003)
 -- Name: ai_outputs; Type: TABLE; Schema: public; Owner: postgres
 --
 
@@ -60,7 +60,7 @@ CREATE TABLE public.ai_outputs (
 ALTER TABLE public.ai_outputs OWNER TO postgres;
 
 --
--- TOC entry 222 (class 1259 OID 24655)
+-- TOC entry 221 (class 1259 OID 41017)
 -- Name: job_applications; Type: TABLE; Schema: public; Owner: postgres
 --
 
@@ -78,14 +78,14 @@ CREATE TABLE public.job_applications (
     stage character varying(20) DEFAULT 'saved'::character varying NOT NULL,
     updated_at timestamp without time zone DEFAULT now() NOT NULL,
     interview_date date,
-    CONSTRAINT job_applications_stage_check CHECK (((stage)::text = ANY ((ARRAY['saved'::character varying, 'applied'::character varying, 'interviewing'::character varying, 'offer'::character varying, 'rejected'::character varying])::text[])))
+    CONSTRAINT job_applications_stage_check CHECK (((stage)::text = ANY (ARRAY[('saved'::character varying)::text, ('applied'::character varying)::text, ('interviewing'::character varying)::text, ('offer'::character varying)::text, ('rejected'::character varying)::text])))
 );
 
 
 ALTER TABLE public.job_applications OWNER TO postgres;
 
 --
--- TOC entry 221 (class 1259 OID 24635)
+-- TOC entry 222 (class 1259 OID 41032)
 -- Name: profiles; Type: TABLE; Schema: public; Owner: postgres
 --
 
@@ -101,7 +101,7 @@ CREATE TABLE public.profiles (
 ALTER TABLE public.profiles OWNER TO postgres;
 
 --
--- TOC entry 220 (class 1259 OID 24619)
+-- TOC entry 223 (class 1259 OID 41042)
 -- Name: users; Type: TABLE; Schema: public; Owner: postgres
 --
 
@@ -115,14 +115,19 @@ CREATE TABLE public.users (
     google_id character varying(255),
     auth_provider character varying(20) DEFAULT 'local'::character varying NOT NULL,
     email_notifications boolean DEFAULT true NOT NULL,
-    ai_insights boolean DEFAULT true NOT NULL
+    ai_insights boolean DEFAULT true NOT NULL,
+    is_verified boolean DEFAULT false NOT NULL,
+    otp_code character varying(64),
+    otp_expires_at timestamp without time zone,
+    reset_token character varying(64),
+    reset_token_expires_at timestamp without time zone
 );
 
 
 ALTER TABLE public.users OWNER TO postgres;
 
 --
--- TOC entry 4835 (class 2606 OID 24689)
+-- TOC entry 4821 (class 2606 OID 41060)
 -- Name: ai_outputs ai_outputs_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -131,7 +136,7 @@ ALTER TABLE ONLY public.ai_outputs
 
 
 --
--- TOC entry 4833 (class 2606 OID 24669)
+-- TOC entry 4828 (class 2606 OID 41062)
 -- Name: job_applications job_applications_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -140,7 +145,7 @@ ALTER TABLE ONLY public.job_applications
 
 
 --
--- TOC entry 4827 (class 2606 OID 24646)
+-- TOC entry 4831 (class 2606 OID 41064)
 -- Name: profiles profiles_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -149,7 +154,7 @@ ALTER TABLE ONLY public.profiles
 
 
 --
--- TOC entry 4829 (class 2606 OID 24648)
+-- TOC entry 4833 (class 2606 OID 41066)
 -- Name: profiles profiles_user_id_key; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -158,7 +163,7 @@ ALTER TABLE ONLY public.profiles
 
 
 --
--- TOC entry 4838 (class 2606 OID 32786)
+-- TOC entry 4824 (class 2606 OID 41068)
 -- Name: ai_outputs uniq_job_application_type; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -167,7 +172,7 @@ ALTER TABLE ONLY public.ai_outputs
 
 
 --
--- TOC entry 4820 (class 2606 OID 24634)
+-- TOC entry 4835 (class 2606 OID 41070)
 -- Name: users users_email_key; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -176,7 +181,7 @@ ALTER TABLE ONLY public.users
 
 
 --
--- TOC entry 4822 (class 2606 OID 32775)
+-- TOC entry 4837 (class 2606 OID 41072)
 -- Name: users users_google_id_key; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -185,7 +190,7 @@ ALTER TABLE ONLY public.users
 
 
 --
--- TOC entry 4824 (class 2606 OID 24632)
+-- TOC entry 4839 (class 2606 OID 41074)
 -- Name: users users_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -194,7 +199,7 @@ ALTER TABLE ONLY public.users
 
 
 --
--- TOC entry 4836 (class 1259 OID 24695)
+-- TOC entry 4822 (class 1259 OID 41075)
 -- Name: idx_ai_outputs_application_id; Type: INDEX; Schema: public; Owner: postgres
 --
 
@@ -202,7 +207,7 @@ CREATE INDEX idx_ai_outputs_application_id ON public.ai_outputs USING btree (app
 
 
 --
--- TOC entry 4830 (class 1259 OID 24675)
+-- TOC entry 4825 (class 1259 OID 41076)
 -- Name: idx_job_applications_user_id; Type: INDEX; Schema: public; Owner: postgres
 --
 
@@ -210,7 +215,7 @@ CREATE INDEX idx_job_applications_user_id ON public.job_applications USING btree
 
 
 --
--- TOC entry 4831 (class 1259 OID 32784)
+-- TOC entry 4826 (class 1259 OID 41077)
 -- Name: idx_job_applications_user_stage; Type: INDEX; Schema: public; Owner: postgres
 --
 
@@ -218,7 +223,7 @@ CREATE INDEX idx_job_applications_user_stage ON public.job_applications USING bt
 
 
 --
--- TOC entry 4825 (class 1259 OID 24654)
+-- TOC entry 4829 (class 1259 OID 41078)
 -- Name: idx_profiles_user_id; Type: INDEX; Schema: public; Owner: postgres
 --
 
@@ -226,7 +231,7 @@ CREATE INDEX idx_profiles_user_id ON public.profiles USING btree (user_id);
 
 
 --
--- TOC entry 4841 (class 2606 OID 24690)
+-- TOC entry 4840 (class 2606 OID 41079)
 -- Name: ai_outputs ai_outputs_application_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -235,7 +240,7 @@ ALTER TABLE ONLY public.ai_outputs
 
 
 --
--- TOC entry 4840 (class 2606 OID 24670)
+-- TOC entry 4841 (class 2606 OID 41084)
 -- Name: job_applications job_applications_user_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -244,7 +249,7 @@ ALTER TABLE ONLY public.job_applications
 
 
 --
--- TOC entry 4839 (class 2606 OID 24649)
+-- TOC entry 4842 (class 2606 OID 41089)
 -- Name: profiles profiles_user_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -252,11 +257,10 @@ ALTER TABLE ONLY public.profiles
     ADD CONSTRAINT profiles_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.users(id) ON DELETE CASCADE;
 
 
--- Completed on 2026-08-03 18:01:17
+-- Completed on 2026-09-12 18:13:02
 
 --
 -- PostgreSQL database dump complete
 --
 
-\unrestrict PUWPa61WhWekwptRYbEJYlrEVKfmODp4U6A3KuFCvOOf5QKcxRSPTWMuUl4YC3E
 

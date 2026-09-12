@@ -3,11 +3,12 @@
   "version": "1.0.0",
   "description": "",
   "main": "index.js",
-  "scripts": {
-    "dev": "nodemon server.js",
-    "start": "node server.js",
-    "test": "vitest"
-  },
+ "scripts": {
+  "dev": "nodemon server.js",
+  "start": "node server.js",
+  "test": "vitest run",
+  "test:watch": "vitest"
+},
   "keywords": [],
   "author": "",
   "license": "ISC",
