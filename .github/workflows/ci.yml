@@ -46,7 +46,7 @@ jobs:
         run: npm install --no-audit --no-fund
 
       - name: Load schema into test database
-        run: psql "$DATABASE_URL" -f schema.sql
+        run: psql "$DATABASE_URL" -f schema/schema.sql
 
       - name: Run tests
         run: npm test
