@@ -11,8 +11,6 @@ for (const key of required) {
     throw new Error(`Missing required env var: ${key}`);
   }
 }
-console.log('NODE_ENV:', process.env.NODE_ENV);
-console.log('DATABASE_URL:', process.env.DATABASE_URL);
 
 module.exports = {
   port: process.env.PORT || 5000,
