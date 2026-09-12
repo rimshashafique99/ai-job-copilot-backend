@@ -7,8 +7,8 @@ const upload = multer({
   storage: multer.memoryStorage(), // keeps file in RAM, never touches disk — matches our "don't store the raw PDF" decision
   limits: { fileSize: 5 * 1024 * 1024 }, // 5MB cap
   fileFilter: (req, file, cb) => {
-    if (file.mimetype !== 'application/pdf') {
-      return cb(new Error('Only PDF files are allowed'));
+    if (file.mimetype !== "application/pdf") {
+      return cb(new Error("Only PDF files are allowed"));
     }
     cb(null, true);
   },
