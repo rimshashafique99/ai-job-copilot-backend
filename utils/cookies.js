@@ -2,16 +2,16 @@ const isProd = process.env.NODE_ENV === 'production';
 
 const accessCookieOptions = {
   httpOnly: true,
-  secure: isProd,           // only over HTTPS in production; false locally so it works on http://localhost
-  sameSite: isProd ? 'strict' : 'lax',
-  maxAge: 15 * 60 * 1000,    // 15 minutes
+  secure: isProd,
+  sameSite: isProd ? 'none' : 'lax',   // 'none' allows cross-site (Vercel ↔ Render)
+  maxAge: 15 * 60 * 1000,
 };
 
 const refreshCookieOptions = {
   httpOnly: true,
   secure: isProd,
-  sameSite: isProd ? 'strict' : 'lax',
-  maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+  sameSite: isProd ? 'none' : 'lax',
+  maxAge: 7 * 24 * 60 * 60 * 1000,
 };
 
 function setAuthCookies(res, accessToken, refreshToken) {
