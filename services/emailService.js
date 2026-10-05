@@ -1,3 +1,4 @@
+// services/emailService.js
 const config = require('../config');
 const testOtpStore = require('../utils/testOtpstore');
 
@@ -27,13 +28,22 @@ async function sendEmail({ to, subject, html }) {
 }
 
 function otpEmailHtml({ heading, intro, otp, footer }) {
-  // ...your existing template, unchanged
+  return `
+  <div style="font-family: -apple-system, Segoe UI, Roboto, sans-serif; max-width: 420px; margin: 0 auto; padding: 32px 24px; background: #ffffff; border: 1px solid #e5e7eb; border-radius: 12px;">
+    <p style="font-size: 13px; font-weight: 700; color: #4f46e5; letter-spacing: 0.05em; text-transform: uppercase; margin: 0 0 16px;">AI Job Copilot</p>
+    <h2 style="font-size: 20px; color: #111827; margin: 0 0 8px;">${heading}</h2>
+    <p style="font-size: 14px; color: #6b7280; margin: 0 0 24px; line-height: 1.5;">${intro}</p>
+    <div style="background: #f5f3ff; border: 1px solid #ddd6fe; border-radius: 10px; padding: 20px; text-align: center; margin-bottom: 24px;">
+      <span style="font-size: 32px; font-weight: 700; letter-spacing: 0.3em; color: #4f46e5;">${otp}</span>
+    </div>
+    <p style="font-size: 13px; color: #9ca3af; margin: 0; line-height: 1.5;">${footer}</p>
+  </div>`;
 }
 
 async function sendOtpEmail(email, otp) {
   if (process.env.NODE_ENV === 'test') {
     testOtpStore.saveOtp(email, otp);
-    return;
+    return; // skip real sending entirely in test mode
   }
 
   await sendEmail({
@@ -51,7 +61,7 @@ async function sendOtpEmail(email, otp) {
 async function sendResetOtpEmail(email, otp) {
   if (process.env.NODE_ENV === 'test') {
     testOtpStore.saveOtp(email, otp);
-    return;
+    return; // skip real sending entirely in test mode
   }
 
   await sendEmail({
