@@ -1,9 +1,8 @@
-if (process.env.NODE_ENV === 'test') {
-  require('dotenv').config({ path: '.env.test' });
+if (process.env.NODE_ENV === "test") {
+  require("dotenv").config({ path: ".env.test" });
 } else {
-  require('dotenv').config();
+  require("dotenv").config();
 }
-
 
 const required = ["DATABASE_URL", "JWT_ACCESS_SECRET", "JWT_REFRESH_SECRET"];
 for (const key of required) {
@@ -23,7 +22,9 @@ module.exports = {
   smtpPort: Number(process.env.SMTP_PORT),
   smtpUser: process.env.SMTP_USER,
   smtpPass: process.env.SMTP_PASS,
-   cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+  brevoApiKey: process.env.BREVO_API_KEY,
+  emailFrom: process.env.EMAIL_FROM,
+  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
   api_key: process.env.CLOUDINARY_API_KEY,
   api_secret: process.env.CLOUDINARY_API_SECRET,
 };
