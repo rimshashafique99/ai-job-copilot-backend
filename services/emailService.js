@@ -1,13 +1,31 @@
-const nodemailer = require('nodemailer');
+// services/emailService.js
 const config = require('../config');
 const testOtpStore = require('../utils/testOtpstore');
 
-const transporter = nodemailer.createTransport({
-  host: config.smtpHost,
-  port: config.smtpPort,
-  secure: false,
-  auth: { user: config.smtpUser, pass: config.smtpPass },
-});
+const BREVO_URL = 'https://api.brevo.com/v3/smtp/email';
+
+async function sendEmail({ to, subject, html }) {
+  const res = await fetch(BREVO_URL, {
+    method: 'POST',
+    headers: {
+      'api-key': config.brevoApiKey,
+      'content-type': 'application/json',
+      accept: 'application/json',
+    },
+    body: JSON.stringify({
+      sender: { name: 'AI Job Copilot', email: config.emailFrom },
+      to: [{ email: to }],
+      subject,
+      htmlContent: html,
+    }),
+    signal: AbortSignal.timeout(10000), // fail in 10s instead of hanging 120s
+  });
+
+  if (!res.ok) {
+    const body = await res.text();
+    throw new Error(`Email send failed (${res.status}): ${body}`);
+  }
+}
 
 function otpEmailHtml({ heading, intro, otp, footer }) {
   return `
@@ -25,11 +43,10 @@ function otpEmailHtml({ heading, intro, otp, footer }) {
 async function sendOtpEmail(email, otp) {
   if (process.env.NODE_ENV === 'test') {
     testOtpStore.saveOtp(email, otp);
-    return; // skip real SMTP entirely in test mode
+    return; // skip real sending entirely in test mode
   }
 
-  await transporter.sendMail({
-    from: `"AI Job Copilot" <${config.smtpUser}>`,
+  await sendEmail({
     to: email,
     subject: 'Verify your email — AI Job Copilot',
     html: otpEmailHtml({
@@ -40,14 +57,14 @@ async function sendOtpEmail(email, otp) {
     }),
   });
 }
+
 async function sendResetOtpEmail(email, otp) {
   if (process.env.NODE_ENV === 'test') {
     testOtpStore.saveOtp(email, otp);
-    return; // skip real SMTP entirely in test mode
+    return; // skip real sending entirely in test mode
   }
 
-  await transporter.sendMail({
-    from: `"AI Job Copilot" <${config.smtpUser}>`,
+  await sendEmail({
     to: email,
     subject: 'Your password reset code — AI Job Copilot',
     html: otpEmailHtml({
